@@ -85,7 +85,11 @@ Feature: Reserva e manutenção de reservas
         Then uma lista de reservas passadas é exibida com paginação
         And cada item mostra data, horário, sala, status e duração
 
-
+    Scenario: Visualizar detalhes de uma reserva
+        Given eu estou na página "Minhas Reservas" logado como usuário autenticado
+        When eu clico em uma reserva da lista
+        Then os detalhes completos da reserva são exibidos
+        And inclui informações sobre a sala, datas, horários e status
 
 
    
