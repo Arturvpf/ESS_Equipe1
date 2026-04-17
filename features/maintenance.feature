@@ -27,3 +27,11 @@ Scenario: Falha ao criar solicitação com campo obrigatório vazio
   And o professor submete o formulário sem preencher o campo "Descrição"
   Then o sistema não registra a solicitação
   And o sistema exibe a mensagem de erro "O campo Descrição é obrigatório"
+
+Scenario: Excluir solicitação com status pendente 
+  Given o professor autenticado possui uma solicitação com status "Pendente" em seu nome 
+  When o professor requisita a exclusão dessa solicitação pelo seu ID 
+  And o sistema verifica que a solicitação pertence ao professor autenticado 
+  And o sistema verifica que o status da solicitação é "Pendente" 
+  Then o sistema remove a solicitação do banco de dados 
+  And o sistema retorna confirmação de exclusão
