@@ -27,3 +27,4 @@ Scenario: Falha ao criar solicitação com campo obrigatório vazio
   And o professor submete o formulário sem preencher o campo "Descrição"
   Then o sistema não registra a solicitação
   And o sistema exibe a mensagem de erro "O campo Descrição é obrigatório"
+  And (adicionando mais uma linha de ex)
