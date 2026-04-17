@@ -79,6 +79,13 @@ Feature: Reserva e manutenção de reservas
         Then a reserva é atualizada com o novo horário
         And eu vejo a mensagem "Horário alterado com sucesso!"
 
+    Scenario: Visualizar histórico de reservas
+        Given eu estou na página "Minhas Reservas" logado como usuário autenticado
+        When eu clico em "Histórico"
+        Then uma lista de reservas passadas é exibida
+        And cada item mostra data, horário, sala e status
+
+
 
 
    
