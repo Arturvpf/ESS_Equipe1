@@ -82,8 +82,8 @@ Feature: Reserva e manutenção de reservas
     Scenario: Visualizar histórico de reservas
         Given eu estou na página "Minhas Reservas" logado como usuário autenticado
         When eu clico em "Histórico"
-        Then uma lista de reservas passadas é exibida
-        And cada item mostra data, horário, sala e status
+        Then uma lista de reservas passadas é exibida com paginação
+        And cada item mostra data, horário, sala, status e duração
 
 
 
