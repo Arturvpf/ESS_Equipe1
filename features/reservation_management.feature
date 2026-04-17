@@ -44,6 +44,8 @@ Feature: Reserva e manutenção de reservas
       And eu confirmo o cancelamento no diálogo exibido
       Then eu vejo a mensagem "Reserva cancelada com sucesso."
       And a reserva da "Sala D" não aparece mais na minha listagem de reservas
+      And o sistema envia um email de confirmação de cancelamento para o usuário
+
 
     Scenario: Tentar reservar sala já ocupada
         Given eu estou na página "Nova Reserva" logado como usuário autenticado
