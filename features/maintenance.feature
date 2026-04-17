@@ -11,4 +11,11 @@ Feature: maintenance
     Then o sistema registra a solicitação com status "Pendente" associada ao professor autenticado 
     And o sistema retorna confirmação de sucesso
 
-mudando a linha
+Scenario: Falha ao criar solicitação para sala com manutenção pendente
+
+  Given o professor autenticado acessa o formulário de nova solicitação
+  And já existe uma solicitação com status "Pendente" para a sala "Grad 2" associada ao professor autenticado
+  When o professor informa "Grad 2" no campo "Nome da sala"
+  And o professor informa "Ar-condicionado com defeito" no campo "Descrição"
+  Then o sistema não registra a solicitação
+  And o sistema retorna mensagem de erro "Já existe uma solicitação pendente para esta sala"
