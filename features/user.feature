@@ -72,3 +72,13 @@ And eu preencho "Senha" com "senha123"
 And eu clico em "Entrar"
 Then eu vejo a mensagem "CPF ou senha incorretos."
 And eu permaneço na página "Login"
+
+Scenario: Tentativa de alteração de nome com campo vazio
+Given eu estou na página "Dados do Usuário"
+And eu estou autenticado como o usuário "Kauanny Barros"
+When eu clico no botão "Editar"
+And eu limpo o campo "Nome"
+And eu preencho o campo "Senha" com "senha123"
+And eu clico no botão "Salvar alterações"
+Then eu vejo a mensagem "O campo Nome não pode ser vazio."
+And os dados não são alterados no sistema
