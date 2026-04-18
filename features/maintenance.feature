@@ -35,3 +35,13 @@ Scenario: Excluir solicitação com status pendente
   And o sistema verifica que o status da solicitação é "Pendente" 
   Then o sistema remove a solicitação do banco de dados 
   And o sistema retorna confirmação de exclusão
+
+Scenario: Editar descrição de solicitação com status pendente
+
+  Given o professor autenticado possui uma solicitação com status "Pendente" em seu nome
+  And a solicitação possui a descrição "Ar-condicionado com defeito"
+  When o professor acessa a opção de editar a solicitação pelo seu ID
+  And o professor informa "Ar-condicionado barulhento e com defeito" no campo "Descrição"
+  And o professor submete a edição
+  Then o sistema atualiza a descrição para "Ar-condicionado barulhento e com defeito"
+  And o sistema retorna confirmação de edição
