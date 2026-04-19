@@ -19,3 +19,10 @@ O usuário acessa a listagem sem nenhum filtro. O sistema exibe
 todas as reservas dele, ordenadas *da mais recente para a mais
 antiga *, com as informações: nome da sala, data, hora início/fim, 
 status e (quando houver) número de computadores reservados.
+
+Cenário 5: Checar status de uma sala reservada
+O usuário acessa a página da listagem de reservas e o sistema exibe 
+todas as reservas realizadas por ele, mostrando para cada uma: nome da 
+sala, data, hora de início e fim, status da reserva e, quando aplicável,
+informações adicionais como objetos/instrumentos ou número de computadores 
+reservados.
