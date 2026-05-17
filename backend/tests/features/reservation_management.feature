@@ -10,7 +10,7 @@ Feature: Efetuar reserva e manutencao de reservas efetuadas usuario
   Scenario: Realizar reserva de sala com sucesso
     Given Carlos Drummond esta autenticado no sistema com CPF "12345678901"
     And a sala "D005" nao possui reserva confirmada no dia "2026-06-01" entre "08:00" e "10:00"
-    When Carlos informa a sala "D005", horario de inicio "2026-06-01T08:00:00" e horario de fim "2026-06-01T10:00:00"
+    When Carlos reserva a sala "D005" das "2026-06-01T08:00:00" as "2026-06-01T10:00:00"
     Then a reserva e criada com status "pending"
     And a reserva aparece na listagem de Carlos com status "pending"
 
@@ -52,7 +52,7 @@ Feature: Efetuar reserva e manutencao de reservas efetuadas usuario
   Scenario: Editar horario de termino de uma reserva ativa
     Given Carlos Drummond esta autenticado no sistema com CPF "12345678901"
     And Carlos possui uma reserva pendente da sala "E101" das "2026-06-05T10:00:00" as "2026-06-05T12:00:00"
-    When Carlos edita apenas o horario de fim para "2026-06-05T13:00:00"
+    When Carlos edita o horario de fim para "2026-06-05T13:00:00"
     Then a reserva e atualizada com horario de fim "2026-06-05T13:00:00"
 
   Scenario: Visualizar historico de reservas passadas
@@ -70,7 +70,7 @@ Feature: Efetuar reserva e manutencao de reservas efetuadas usuario
   Scenario: Tentar editar reserva ja confirmada
     Given Carlos Drummond esta autenticado no sistema com CPF "12345678901"
     And Carlos possui uma reserva com status "confirmed" da sala "D005" das "2026-06-07T08:00:00" as "2026-06-07T10:00:00"
-    When Carlos tenta editar o horario de fim para "2026-06-07T11:00:00"
+    When Carlos edita o horario de fim para "2026-06-07T11:00:00"
     Then Carlos recebe o erro "So e possivel editar/excluir reservas pendentes"
 
   Scenario: Tentar cancelar reserva ja negada
@@ -81,7 +81,7 @@ Feature: Efetuar reserva e manutencao de reservas efetuadas usuario
 
   Scenario: Usuario tenta criar duas reservas no mesmo horario em salas diferentes
     Given Carlos Drummond esta autenticado no sistema com CPF "12345678901"
-    And Carlos ja possui uma reserva pendente da sala "D005" das "2026-06-09T08:00:00" as "2026-06-09T10:00:00"
+    And Carlos possui uma reserva pendente da sala "D005" das "2026-06-09T08:00:00" as "2026-06-09T10:00:00"
     When Carlos tenta reservar a sala "E101" das "2026-06-09T08:00:00" as "2026-06-09T10:00:00"
     Then Carlos recebe o erro "Voce ja possui uma reserva neste horario"
 
@@ -89,10 +89,10 @@ Feature: Efetuar reserva e manutencao de reservas efetuadas usuario
     Given Carlos Drummond esta autenticado no sistema com CPF "12345678901"
     And outro usuario com CPF "98765432100" possui uma reserva pendente da sala "D005" das "2026-06-10T08:00:00" as "2026-06-10T10:00:00"
     When Carlos reserva a sala "D005" das "2026-06-10T08:00:00" as "2026-06-10T10:00:00"
-    Then a reserva de Carlos e criada com status "pending"
+    Then a reserva e criada com status "pending"
 
   Scenario: Tentar exportar reserva pendente para o calendario
     Given Carlos Drummond esta autenticado no sistema com CPF "12345678901"
     And Carlos possui uma reserva pendente da sala "D005" das "2026-06-11T08:00:00" as "2026-06-11T10:00:00"
-    When Carlos solicita a exportacao da reserva pendente para o calendario
+    When Carlos solicita a exportacao da reserva para o calendario
     Then Carlos recebe erro informando que apenas reservas confirmadas podem ser exportadas
