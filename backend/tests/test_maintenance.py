@@ -1,43 +1,34 @@
 import pytest
 from pytest_bdd import scenarios, given, when, then, parsers
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 from routes.maintenance import ROOM_MODEL_AVAILABLE
-
-from database import Base, get_db
+from database import get_db, SessionLocal
 import models.maintenance
-
 from main import app
-
-engine_test = create_engine(
-    "sqlite:///:memory:",
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-
-SessionTest = sessionmaker(bind=engine_test)
-
-Base.metadata.create_all(bind=engine_test)
-
-def override_db():
-    db = SessionTest()
-    try:
-        yield db
-    finally:
-        db.close()
-
-app.dependency_overrides[get_db] = override_db
 
 scenarios("../../features/maintenance.feature")
 
+# Garante que o get_db não está sendo sobrescrito por outro teste
 @pytest.fixture(autouse=True)
-def clean_database():
+def reset_overrides():
+    app.dependency_overrides = {}
     yield
-    db = SessionTest()
-    for table in reversed(Base.metadata.sorted_tables):
-        db.execute(table.delete())
+    app.dependency_overrides = {}
+
+@pytest.fixture(autouse=True)
+def setup_and_clean():
+    # Remove qualquer override de outros testes
+    app.dependency_overrides = {}
+    # Limpa antes
+    db = SessionLocal()
+    from models.maintenance import MaintenanceRequest
+    db.query(MaintenanceRequest).delete()
+    db.commit()
+    db.close()
+    yield
+    # Limpa depois
+    db = SessionLocal()
+    db.query(MaintenanceRequest).delete()
     db.commit()
     db.close()
 
@@ -92,7 +83,7 @@ def teacher_has_confirmed_request(client, context, teacher, id, description):
         json={"room": "Grad 2", "description": description}
     )
     request = res.json()
-    db = SessionTest()
+    db = SessionLocal()
     from models.maintenance import MaintenanceRequest, MaintenanceStatus
     db.query(MaintenanceRequest).filter(MaintenanceRequest.id == request["id"]).update(
         {"status": MaintenanceStatus.confirmed}

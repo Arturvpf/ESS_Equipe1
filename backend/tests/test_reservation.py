@@ -2,12 +2,6 @@
 Testes BDD — Feature 7: Efetuar reserva e manutencao de reservas (usuario)
 Aluno: Artur Vinicius Pereira Fernandes | Persona BDD: Carlos Drummond
 
-Padrao: test_maintenance.py da Isabela (IsabelaMoura73)
-  - SQLite in-memory com StaticPool
-  - dependency_overrides para banco de teste
-  - Fixture autouse para limpeza entre cenarios
-  - Fixture context (dict) para compartilhar estado entre steps
-
 Rodar:
     cd backend && pytest tests/test_reservation.py -v
 """
@@ -18,58 +12,52 @@ from datetime import datetime
 import pytest
 from fastapi.testclient import TestClient
 from pytest_bdd import given, parsers, scenarios, then, when
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
-from database import Base, get_db
+from database import SessionLocal
 import models.reservation  # noqa: F401
 from models.reservation import Reservation, ReservationStatus
 from main import app
-
-# ── Banco em memoria ──────────────────────────────────────────────────────────
-engine_test = create_engine(
-    "sqlite:///:memory:",
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-SessionTest = sessionmaker(bind=engine_test, autocommit=False, autoflush=False)
-Base.metadata.create_all(bind=engine_test)
-
-
-def override_get_db():
-    db = SessionTest()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
 
 scenarios("features/reservation_management.feature")
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
 @pytest.fixture(autouse=True)
-def clean_database():
-    yield
-    db = SessionTest()
-    for table in reversed(Base.metadata.sorted_tables):
-        db.execute(table.delete())
+def setup_and_clean():
+    db = SessionLocal()
+    db.query(Reservation).delete()
     db.commit()
     db.close()
-
+    yield
+    db = SessionLocal()
+    db.query(Reservation).delete()
+    db.commit()
+    db.close()
 
 @pytest.fixture
 def client():
     return TestClient(app)
 
-
 @pytest.fixture
 def context():
     return {}
 
+def _insert_reservation(user_cpf, user_name, room, start, end, status):
+    db = SessionLocal()
+    r = Reservation(
+        user_cpf=user_cpf,
+        user_name=user_name,
+        room=room,
+        start_time=_parse_dt(start),
+        end_time=_parse_dt(end),
+        status=status,
+    )
+    db.add(r)
+    db.commit()
+    db.refresh(r)
+    rid = r.id
+    db.close()
+    return rid
 
 # ── Utilitarios ───────────────────────────────────────────────────────────────
 
@@ -88,7 +76,7 @@ def _normalize(text: str) -> str:
 
 
 def _insert_reservation(user_cpf, user_name, room, start, end, status):
-    db = SessionTest()
+    db = SessionLocal()
     r = Reservation(
         user_cpf=user_cpf,
         user_name=user_name,
@@ -286,10 +274,9 @@ def reserva_atualizada(context, expected_end):
 def status_permanece(context, expected):
     assert context["response"].json()["status"] == expected
 
-
 @then(parsers.parse('a reserva tem status "{expected}"'))
 def reserva_tem_status(context, expected):
-    db = SessionTest()
+    db = SessionLocal()
     r = db.query(Reservation).filter(Reservation.id == context["reservation_id"]).first()
     db.close()
     assert r is not None
