@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from database import engine, Base
+from routes.maintenance import router as maintenance_router
+
+Base.metadata.create_all(bind=engine)
 
 from database import engine, Base
 
@@ -53,6 +57,7 @@ app.include_router(reservation_router)
 #if _has_maintenance_router:
 #  app.include_router(maintenance_router)
 
+app.include_router(maintenance_router)
 
 @app.get("/", tags=["Root"])
 def root():
