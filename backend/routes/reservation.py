@@ -14,9 +14,6 @@ Regras de negócio implementadas:
   RN-09 — user_cpf obrigatório como query param (stop-gap até JWT da Kauanny)
 
 ⚠️  DÍVIDA TÉCNICA:
-  - Autenticação via JWT (Kauanny) ainda não implementada.
-    Quando disponível, substituir `user_cpf`/`user_name` query params
-    pelo token decodificado via `get_current_user`.
   - Quando Room model (Aninha) estiver disponível, remover o fallback
     `ROOM_MODEL_AVAILABLE` e validar sala pelo banco diretamente.
 
@@ -150,6 +147,7 @@ def create_reservation(
     payload: ReservationCreate,
     user_cpf: str = Query(..., description="CPF do usuário (stop-gap até JWT)"),
     user_name: str = Query(..., description="Nome do usuário (stop-gap até JWT)"),
+    user_type: str = Query(None, description="Tipo do usuário: discente ou docente"), #Campo opcional para manter compatibilidade com reservas antigas caso a feature 4 seja implementada depois. Pode ser "student", "teacher" ou nulo.
     db: Session = Depends(get_db),
 ) -> ReservationResponse:
     # RN-04: sala em manutenção?
@@ -168,6 +166,7 @@ def create_reservation(
         start_time=payload.start_time,
         end_time=payload.end_time,
         status=ReservationStatus.pending,
+        user_type=user_type, #Campo opcional para manter compatibilidade com reservas antigas caso a feature 4 seja implementada depois. Pode ser "student", "teacher" ou nulo.
     )
     db.add(reservation)
     db.commit()

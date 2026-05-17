@@ -22,6 +22,7 @@ class ReservationCreate(BaseModel):
     room: str
     start_time: datetime
     end_time: datetime
+    user_type: Optional[str] = None  # Campo opcional para manter compatibilidade com reservas antigas caso a feature 4 seja implementada depois. Pode ser "student", "teacher" ou nulo.
 
     # RN-07: nome da sala não pode ser vazio
     @field_validator("room")
