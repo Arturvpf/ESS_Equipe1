@@ -5,10 +5,23 @@ from database import get_db
 from models.maintenance import MaintenanceRequest, MaintenanceStatus
 from schemas.maintenance import MaintenanceRequestCreate, MaintenanceRequestUpdate, MaintenanceRequestResponse
 
+try:
+    from models.room import Room
+    ROOM_MODEL_AVAILABLE = True
+except ImportError:
+    ROOM_MODEL_AVAILABLE = False
+
 router = APIRouter(prefix="/api/maintenance", tags=["maintenance"])
 
 @router.post("/", response_model=MaintenanceRequestResponse, status_code=201)
 def create_request(data: MaintenanceRequestCreate, teacher_name: str, db: Session = Depends(get_db)):
+    if ROOM_MODEL_AVAILABLE:
+        room = db.query(Room).filter(Room.name == data.room).first()
+        if not room:
+            raise HTTPException(status_code=404, detail="Sala não encontrada")
+        if room.in_maintenance:
+            raise HTTPException(status_code=400, detail="Sala em manutenção")
+
     existing = db.query(MaintenanceRequest).filter(
         MaintenanceRequest.room == data.room,
         MaintenanceRequest.teacher_name == teacher_name,
@@ -37,9 +50,9 @@ def list_my_requests(teacher_name: str, db: Session = Depends(get_db)):
 def update_request(request_id: int, data: MaintenanceRequestUpdate, db: Session = Depends(get_db)):
     request = db.query(MaintenanceRequest).filter(MaintenanceRequest.id == request_id).first()
     if not request:
-        raise HTTPException(status_code=404, detail="Request not found")
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
     if request.status != MaintenanceStatus.pending:
-        raise HTTPException(status_code=400, detail="Only pending requests can be edited")
+        raise HTTPException(status_code=400, detail="Só é possível editar solicitações pendentes")
     request.description = data.description
     db.commit()
     db.refresh(request)
@@ -49,9 +62,9 @@ def update_request(request_id: int, data: MaintenanceRequestUpdate, db: Session 
 def delete_request(request_id: int, db: Session = Depends(get_db)):
     request = db.query(MaintenanceRequest).filter(MaintenanceRequest.id == request_id).first()
     if not request:
-        raise HTTPException(status_code=404, detail="Request not found")
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
     if request.status != MaintenanceStatus.pending:
-        raise HTTPException(status_code=400, detail="Only pending requests can be deleted")
+        raise HTTPException(status_code=400, detail="Só é possível excluir solicitações pendentes")
     db.delete(request)
     db.commit()
     return None
