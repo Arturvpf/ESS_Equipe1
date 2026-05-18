@@ -128,7 +128,7 @@ def _check_user_conflict(
 )
 def create_reservation(
     payload: ReservationCreate,
-    user_cpf: str = Query(..., description="CPF do usuário (stop-gap até JWT)"),
+    user_cpf: str = Query(..., description="CPF do usuário (stop-gap até JWT)"), 
     user_name: str = Query(..., description="Nome do usuário (stop-gap até JWT)"),
     db: Session = Depends(get_db),
 ) -> ReservationResponse:
