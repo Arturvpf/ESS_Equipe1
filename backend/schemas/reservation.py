@@ -1,11 +1,3 @@
-"""
-Schemas Pydantic v2 para a feature de Reserva de Sala — Feature 7 (Artur)
-
-Validações embutidas:
-  - RN-07: campos obrigatórios (room, start_time, end_time)
-  - Horário fim > horário início (sanidade básica de período)
-"""
-
 from __future__ import annotations
 
 from datetime import datetime
