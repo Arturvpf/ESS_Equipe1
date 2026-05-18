@@ -1,12 +1,5 @@
 """
-Model da Reserva de Sala — Feature 7 (Artur Vinicius Pereira Fernandes)
-
-Tabela: reservations
-Status: pending | confirmed | denied | completed
-(valores em inglês, lowercase — padrão da equipe, igual ao MaintenanceStatus da Isabela)
-
 Dependências externas (gerenciadas com try/except para tolerância):
-  - models.user (Kauanny) — usado como FK lógica via user_cpf
   - models.room (Aninha)  — verificado em runtime na rota (RN-04)
 """
 

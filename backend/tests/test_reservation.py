@@ -1,11 +1,3 @@
-"""
-Testes BDD — Feature 7: Efetuar reserva e manutencao de reservas (usuario)
-Aluno: Artur Vinicius Pereira Fernandes | Persona BDD: Carlos Drummond
-
-Rodar:
-    cd backend && pytest tests/test_reservation.py -v
-"""
-
 import unicodedata
 from datetime import datetime
 
