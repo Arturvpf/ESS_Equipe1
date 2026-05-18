@@ -132,7 +132,7 @@ def _check_user_conflict(
 )
 def create_reservation(
     payload: ReservationCreate,
-    user_cpf: str = Query(..., description="CPF do usuário (stop-gap até JWT)"),
+    user_cpf: str = Query(..., description="CPF do usuário (stop-gap até JWT)"), 
     user_name: str = Query(..., description="Nome do usuário (stop-gap até JWT)"),
     user_type: str = Query(None, description="Tipo do usuário: discente ou docente"), #Campo opcional para manter compatibilidade com reservas antigas caso a feature 4 seja implementada depois. Pode ser "student", "teacher" ou nulo.
     db: Session = Depends(get_db),
@@ -164,7 +164,7 @@ def create_reservation(
 # ── Endpoint 2: Listar reservas do próprio usuário ───────────────────────────
 
 @router.get(
-    "/my-reservations",
+    "/",
     response_model=List[ReservationResponse],
     summary="Listar minhas reservas",
     description=(
