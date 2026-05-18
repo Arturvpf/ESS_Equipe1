@@ -1,15 +1,11 @@
 """
-Implementadas:
-   -Usuário só pode ter uma reserva por data/horário (qualquer sala)
-    -Conflito: sala já confirmada no período → erro 400
-    -Duas reservas pending da mesma sala/horário de usuários distintos são permitidas
-    -Sala em manutenção não pode ser reservada (tolerante à ausência do model Room)
-    -Edição e cancelamento só para reservas 'pending'
-    -Ao editar, todas as regras são revalidadas
-    -Campos obrigatórios validados pelo schema
-
 ⚠️   - Quando Room model (Aninha) estiver disponível, remover o fallback
     `ROOM_MODEL_AVAILABLE` e validar sala pelo banco diretamente.
+
+Endpoints:
+  POST   /api/reservations/                         → cria reserva
+  PUT    /api/reservations/{id}                     → edita reserva pending
+  DELETE /api/reservations/{id}                     → cancela reserva pending
 
 """
 
@@ -134,7 +130,6 @@ def create_reservation(
     payload: ReservationCreate,
     user_cpf: str = Query(..., description="CPF do usuário (stop-gap até JWT)"),
     user_name: str = Query(..., description="Nome do usuário (stop-gap até JWT)"),
-    user_type: str = Query(None, description="Tipo do usuário: discente ou docente"), #Campo opcional para manter compatibilidade com reservas antigas caso a feature 4 seja implementada depois. Pode ser "student", "teacher" ou nulo.
     db: Session = Depends(get_db),
 ) -> ReservationResponse:
     # RN-04: sala em manutenção?
@@ -153,7 +148,6 @@ def create_reservation(
         start_time=payload.start_time,
         end_time=payload.end_time,
         status=ReservationStatus.pending,
-        user_type=user_type, #Campo opcional para manter compatibilidade com reservas antigas caso a feature 4 seja implementada depois. Pode ser "student", "teacher" ou nulo.
     )
     db.add(reservation)
     db.commit()
@@ -161,62 +155,7 @@ def create_reservation(
     return reservation  # type: ignore[return-value]
 
 
-# ── Endpoint 2: Listar reservas do próprio usuário ───────────────────────────
-
-@router.get(
-    "/my-reservations",
-    response_model=List[ReservationResponse],
-    summary="Listar minhas reservas",
-    description=(
-        "Retorna todas as reservas do usuário identificado pelo CPF, "
-        "ordenadas pela mais recente (start_time DESC). "
-        "Aceita filtro opcional por status."
-    ),
-)
-def list_my_reservations(
-    user_cpf: str = Query(..., description="CPF do usuário"),
-    filter_status: ReservationStatus | None = Query(None, alias="status"),
-    db: Session = Depends(get_db),
-) -> List[Reservation]:
-    query = db.query(Reservation).filter(Reservation.user_cpf == user_cpf)
-
-    if filter_status is not None:
-        query = query.filter(Reservation.status == filter_status)
-
-    return query.order_by(Reservation.start_time.desc()).all()
-
-
-# ── Endpoint 3: Detalhar uma reserva ────────────────────────────────────────
-
-@router.get(
-    "/{reservation_id}",
-    response_model=ReservationResponse,
-    summary="Detalhar reserva",
-    description="Retorna os detalhes de uma reserva específica. Apenas o dono pode acessar.",
-)
-def get_reservation(
-    reservation_id: int,
-    user_cpf: str = Query(..., description="CPF do usuário (verificação de propriedade)"),
-    db: Session = Depends(get_db),
-) -> Reservation:
-    reservation = db.query(Reservation).filter(Reservation.id == reservation_id).first()
-
-    if reservation is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Reserva não encontrada",
-        )
-
-    if reservation.user_cpf != user_cpf:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acesso negado: você não é o dono desta reserva",
-        )
-
-    return reservation
-
-
-# ── Endpoint 4: Editar reserva pending ───────────────────────────────────────
+# ── Endpoint 2: Editar reserva pending ───────────────────────────────────────
 
 @router.put(
     "/{reservation_id}",
@@ -313,75 +252,3 @@ def cancel_reservation(
     # Soft delete: marca como denied (padrão do sistema — não apaga do banco)
     reservation.status = ReservationStatus.denied
     db.commit()
-
-
-# ── Endpoint 6: Exportar reserva para Google Calendar (.ics) ─────────────────
-
-@router.get(
-    "/{reservation_id}/calendar.ics",
-    response_class=PlainTextResponse,
-    summary="Exportar reserva para Google Calendar",
-    description=(
-        "Gera um arquivo iCalendar (.ics) compatível com Google Calendar, "
-        "Apple Calendar e Outlook. Disponível para reservas confirmadas."
-    ),
-)
-def export_calendar(
-    reservation_id: int,
-    user_cpf: str = Query(..., description="CPF do usuário"),
-    db: Session = Depends(get_db),
-) -> str:
-    reservation = db.query(Reservation).filter(Reservation.id == reservation_id).first()
-
-    if reservation is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Reserva não encontrada",
-        )
-
-    if reservation.user_cpf != user_cpf:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acesso negado: você não é o dono desta reserva",
-        )
-
-    if reservation.status != ReservationStatus.confirmed:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Somente reservas confirmadas podem ser exportadas para o calendário",
-        )
-
-    # Formatar timestamps no padrão iCalendar (UTC: YYYYMMDDTHHmmssZ)
-    def fmt_ical(dt: datetime) -> str:
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt.strftime("%Y%m%dT%H%M%SZ")
-
-    now_str = fmt_ical(datetime.now(timezone.utc))
-    uid = f"reservation-{reservation.id}@salla.cin.ufpe.br"
-
-    ics_content = (
-        "BEGIN:VCALENDAR\r\n"
-        "VERSION:2.0\r\n"
-        "PRODID:-//Salla CIn-UFPE//Reserva de Sala//PT\r\n"
-        "CALSCALE:GREGORIAN\r\n"
-        "METHOD:PUBLISH\r\n"
-        "BEGIN:VEVENT\r\n"
-        f"UID:{uid}\r\n"
-        f"DTSTAMP:{now_str}\r\n"
-        f"DTSTART:{fmt_ical(reservation.start_time)}\r\n"
-        f"DTEND:{fmt_ical(reservation.end_time)}\r\n"
-        f"SUMMARY:Reserva de Sala — {reservation.room}\r\n"
-        f"DESCRIPTION:Reserva da sala {reservation.room} confirmada para "
-        f"{reservation.user_name} (CPF: {reservation.user_cpf}). "
-        f"Status: {reservation.status.value}.\r\n"
-        f"LOCATION:{reservation.room}\r\n"
-        "END:VEVENT\r\n"
-        "END:VCALENDAR\r\n"
-    )
-
-    return PlainTextResponse(  # type: ignore[return-value]
-        content=ics_content,
-        media_type="text/calendar; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="reserva-{reservation.id}.ics"'},
-    )
