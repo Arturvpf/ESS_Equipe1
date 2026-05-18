@@ -1,29 +1,16 @@
 """
-Rotas da feature "Efetuar Reserva e Manutenção de Reservas" — Feature 7
-Aluno responsável: Artur Vinicius Pereira Fernandes
+Implementadas:
+   -Usuário só pode ter uma reserva por data/horário (qualquer sala)
+    -Conflito: sala já confirmada no período → erro 400
+    -Duas reservas pending da mesma sala/horário de usuários distintos são permitidas
+    -Sala em manutenção não pode ser reservada (tolerante à ausência do model Room)
+    -Edição e cancelamento só para reservas 'pending'
+    -Ao editar, todas as regras são revalidadas
+    -Campos obrigatórios validados pelo schema
 
-Regras de negócio implementadas:
-  RN-01 — Usuário só pode ter uma reserva por data/horário (qualquer sala)
-  RN-02 — Conflito: sala já confirmada no período → erro 400
-  RN-03 — Duas reservas pending da mesma sala/horário de usuários distintos são permitidas
-  RN-04 — Sala em manutenção não pode ser reservada (tolerante à ausência do model Room)
-  RN-05 — Edição e cancelamento só para reservas 'pending'
-  RN-06 — Ao editar, todas as regras são revalidadas
-  RN-07 — Campos obrigatórios validados pelo schema (Pydantic 422)
-  RN-08 — user_type armazenado (prioridade visual no admin — feature do Erick)
-  RN-09 — user_cpf obrigatório como query param (stop-gap até JWT da Kauanny)
-
-⚠️  DÍVIDA TÉCNICA:
-  - Quando Room model (Aninha) estiver disponível, remover o fallback
+⚠️   - Quando Room model (Aninha) estiver disponível, remover o fallback
     `ROOM_MODEL_AVAILABLE` e validar sala pelo banco diretamente.
 
-Endpoints:
-  POST   /api/reservations/                         → cria reserva
-  GET    /api/reservations/my-reservations          → lista reservas do usuário
-  GET    /api/reservations/{id}                     → detalha uma reserva
-  PUT    /api/reservations/{id}                     → edita reserva pending
-  DELETE /api/reservations/{id}                     → cancela reserva pending
-  GET    /api/reservations/{id}/calendar.ics        → exporta para Google Calendar
 """
 
 from __future__ import annotations
